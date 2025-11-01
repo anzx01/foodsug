@@ -4,29 +4,38 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-// Import all food photos
-import appleImg from "@/assets/foods/apple.jpg";
-import orangeImg from "@/assets/foods/orange.jpg";
-import whiteRiceImg from "@/assets/foods/white-rice.jpg";
-import bananaImg from "@/assets/foods/banana.jpg";
-import oatmealImg from "@/assets/foods/oatmeal.jpg";
-import whiteBreadImg from "@/assets/foods/white-bread.jpg";
-import strawberryImg from "@/assets/foods/strawberry.jpg";
-import broccoliImg from "@/assets/foods/broccoli.jpg";
-import watermelonImg from "@/assets/foods/watermelon.jpg";
-import brownRiceImg from "@/assets/foods/brown-rice.jpg";
-
+// Use resource images from the /resource/images directory
 const foodImages: Record<string, string> = {
-  apple: appleImg,
-  orange: orangeImg,
-  "white-rice": whiteRiceImg,
-  banana: bananaImg,
-  oatmeal: oatmealImg,
-  "white-bread": whiteBreadImg,
-  strawberry: strawberryImg,
-  broccoli: broccoliImg,
-  watermelon: watermelonImg,
-  "brown-rice": brownRiceImg,
+  lvdou: "/resource/images/lvdou.jpg",
+  hongdou: "/resource/images/hongdou.jpg",
+  lianou: "/resource/images/lianou.jpg",
+  xiaomizhou: "/resource/images/xiaomizhou.jpg",
+  qiaomaimian: "/resource/images/qiaomaimian.png",
+  yutou: "/resource/images/yutou.jpg",
+  donggua: "/resource/images/donggua.jpg",
+  doufu: "/resource/images/doufu.jpg",
+  huangdouya: "/resource/images/huangdouya.JPG",
+  huanggua: "/resource/images/huanggua.jpg",
+  hongshufensi: "/resource/images/hongshufensi.png",
+  caomifan: "/resource/images/caomifan.jpeg",
+  daoxiaomian: "/resource/images/daoxiaomian.jpg",
+  huntun: "/resource/images/huntun.jpg",
+  mantou: "/resource/images/mantou.webp",
+  zongzi: "/resource/images/zongzi.webp",
+  yumi: "/resource/images/yumi.webp",
+  babaozhou: "/resource/images/babaozhou.jpeg",
+  yiren: "/resource/images/yiren.png",
+  shanyao: "/resource/images/shanyao.jpeg",
+  youtiao: "/resource/images/youtiao.jpg",
+  chaomifen: "/resource/images/chaomifen.jpg",
+  baimizhou: "/resource/images/baimizhou.jpg",
+  baimifan: "/resource/images/baimifan.jpg",
+  nuomifan: "/resource/images/nuomifan.png",
+  chashaosu: "/resource/images/chashaosu.webp",
+  yuebing: "/resource/images/yuebing.jpg",
+  zhachunjuan: "/resource/images/zhachunjuan.jpg",
+  lvdougao: "/resource/images/lvdougao.jpg",
+  doushabao: "/resource/images/doushabao.jpg",
 };
 
 type FilterType = "all" | "low" | "medium" | "high";
@@ -118,14 +127,14 @@ const FoodCard = ({ food }: { food: Food }) => {
   return (
     <Card className={`overflow-hidden hover:shadow-lg transition-all ${shadowClass} group border-none`}>
       <div className={`aspect-square bg-gradient-to-br ${getGradient(food.category)} flex items-center justify-center relative overflow-hidden`}>
-        {food.imageType === "photo" && foodImages[food.image] ? (
+        {foodImages[food.image] ? (
           <img
             src={foodImages[food.image]}
             alt={food.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
           />
         ) : (
-          <span className="text-6xl group-hover:scale-110 transition-transform duration-300">{food.image}</span>
+          <span className="text-6xl group-hover:scale-110 transition-transform duration-300">🍽️</span>
         )}
       </div>
       <div className="p-3 space-y-2 bg-gradient-to-b from-card to-secondary/20">

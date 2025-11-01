@@ -13,29 +13,43 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, TrendingUp, TrendingDown, Minus, Edit2 } from "lucide-react";
+import { Plus, Trash2, TrendingUp, TrendingDown, Minus, Edit2, Activity, Heart, Target } from "lucide-react";
 import {
   getBloodSugarRecords,
   saveBloodSugarRecord,
   updateBloodSugarRecord,
   deleteBloodSugarRecord,
   getRecentStatistics,
+  initializeStorage,
   BloodSugarRecord,
 } from "@/data/bloodSugarStorage";
 import { toast } from "sonner";
-import { BloodSugarChart } from "@/components/BloodSugarChart";
+import { EChartsBloodSugarChart } from "@/components/EChartsBloodSugarChart";
 
 export const ProfilePage = () => {
   const [records, setRecords] = useState<BloodSugarRecord[]>([]);
   const [statistics, setStatistics] = useState({ average: 0, min: 0, max: 0 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<BloodSugarRecord | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     value: "",
     time: new Date().toISOString().slice(0, 16),
@@ -45,10 +59,13 @@ export const ProfilePage = () => {
   const loadData = () => {
     const data = getBloodSugarRecords();
     setRecords(data.sort((a, b) => b.timestamp - a.timestamp));
-    setStatistics(getRecentStatistics(3));
+    const stats = getRecentStatistics(30);
+    setStatistics(stats);
   };
 
   useEffect(() => {
+    // 初始化存储，清理mock数据
+    initializeStorage();
     loadData();
   }, []);
 
@@ -90,11 +107,18 @@ export const ProfilePage = () => {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("确定删除此记录？")) {
-      deleteBloodSugarRecord(id);
+    setRecordToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (recordToDelete) {
+      deleteBloodSugarRecord(recordToDelete);
       toast.success("记录已删除");
       loadData();
     }
+    setRecordToDelete(null);
+    setDeleteConfirmOpen(false);
   };
 
   const handleCloseDialog = () => {
@@ -128,11 +152,11 @@ export const ProfilePage = () => {
           {/* Chart */}
           <Card className="p-6 shadow-lg border-none bg-gradient-to-br from-card to-secondary/20 animate-fade-in">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">📈</span>
+              <Activity className="w-6 h-6 text-primary" />
               <h3 className="font-semibold text-foreground">血糖趋势</h3>
               <span className="text-sm text-muted-foreground">(近30天)</span>
             </div>
-            <BloodSugarChart data={chartData} />
+            <EChartsBloodSugarChart data={chartData} />
           </Card>
 
           {/* Statistics */}
@@ -140,7 +164,7 @@ export const ProfilePage = () => {
             <StatCard
               label="平均"
               value={statistics.average}
-              icon={<Minus className="w-4 h-4" />}
+              icon={<Target className="w-4 h-4" />}
               variant="default"
             />
             <StatCard
@@ -230,7 +254,7 @@ export const ProfilePage = () => {
           {/* History */}
           <Card className="p-6 shadow-lg border-none animate-fade-in">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">📋</span>
+              <Heart className="w-6 h-6 text-red-500" />
               <h3 className="font-semibold text-foreground">历史记录</h3>
             </div>
             <div className="space-y-3">
@@ -251,8 +275,8 @@ export const ProfilePage = () => {
                           record.value < 7.0 ? "outline" : "destructive"
                         }
                         className={`text-xs ${
-                          record.value < 5.6 
-                            ? "bg-success text-success-foreground" 
+                          record.value < 5.6
+                            ? "bg-success text-success-foreground"
                             : record.value < 7.0
                             ? "bg-warning text-warning-foreground"
                             : ""
@@ -275,14 +299,42 @@ export const ProfilePage = () => {
                     >
                       <Edit2 className="w-4 h-4 text-primary" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 hover:bg-destructive/10"
-                      onClick={() => handleDelete(record.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                    <AlertDialog open={deleteConfirmOpen && recordToDelete === record.id} onOpenChange={(open) => {
+                      if (!open) {
+                        setDeleteConfirmOpen(false);
+                        setRecordToDelete(null);
+                      }
+                    }}>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 hover:bg-destructive/10"
+                          onClick={() => handleDelete(record.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>确认删除记录</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            您确定要删除这条血糖记录吗？此操作无法撤销。
+                            <br /><br />
+                            <strong>记录信息：</strong><br />
+                            血糖值：{record.value} mmol/L<br />
+                            时间：{record.time}<br />
+                            类型：{record.type === "fasting" ? "空腹" : "餐后2小时"}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>取消</AlertDialogCancel>
+                          <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+                            确认删除
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
@@ -312,7 +364,7 @@ const StatCard = ({
       ? "text-warning bg-warning/10"
       : "text-primary bg-primary/10";
 
-  const cardClass = 
+  const cardClass =
     variant === "success"
       ? "shadow-success"
       : variant === "warning"
@@ -325,7 +377,7 @@ const StatCard = ({
         {icon}
       </div>
       <span className="text-xs text-muted-foreground block mb-1">{label}</span>
-      <p className="text-2xl font-bold text-foreground">{value || "—"}</p>
+      <p className="text-2xl font-bold text-foreground">{value === 0 ? "—" : value}</p>
     </Card>
   );
 };

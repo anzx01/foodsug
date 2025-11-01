@@ -4,17 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { foodDatabase, getGIAdvice } from "@/data/foodDatabase";
+import { getGIAdvice } from "@/data/foodDatabase";
 import { toast } from "sonner";
 
 export const RecognizePage = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [recognitionResult, setRecognitionResult] = useState<{
-    name: string;
-    gi: number;
-    category: "low" | "medium" | "high";
-    advice: string;
-    nutrition?: {
+    food_name: string;
+    gi_value: number;
+    suitable_for_diabetics: boolean;
+    recommendation: string;
+    estimated_nutrition: {
       calories: number;
       carbs: number;
       protein: number;
@@ -24,36 +24,91 @@ export const RecognizePage = () => {
   } | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
 
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
-        simulateRecognition();
+      reader.onload = async (e) => {
+        const base64Image = e.target?.result as string;
+        setSelectedImage(base64Image);
+        await analyzeFood(base64Image);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const simulateRecognition = () => {
+  const analyzeFood = async (base64Image: string, retryCount = 0) => {
     setIsRecognizing(true);
     setRecognitionResult(null);
-    
-    setTimeout(() => {
-      // Mock: randomly pick a food item with nutrition data
-      const foodsWithNutrition = foodDatabase.filter(f => f.nutrition);
-      const randomFood = foodsWithNutrition[Math.floor(Math.random() * foodsWithNutrition.length)];
-      setRecognitionResult({
-        name: randomFood.name,
-        gi: randomFood.gi,
-        category: randomFood.category,
-        advice: getGIAdvice(randomFood.gi),
-        nutrition: randomFood.nutrition,
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+
+      const response = await fetch('http://localhost:3001/api/analyze-food', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64Image
+        }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      if (result.success && result.data) {
+        setRecognitionResult(result.data);
+        toast.success('识别完成！');
+      } else {
+        throw new Error(result.error || '识别失败');
+      }
+
+    } catch (error) {
+      console.error('识别错误:', error);
+
+      let errorMessage = '识别失败，请重试';
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = '请求超时，请检查网络连接';
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = '无法连接到服务器，请确保后端服务已启动';
+        } else if (error.message.includes('HTTP 404')) {
+          errorMessage = 'API接口不存在，请检查服务器配置';
+        } else if (error.message.includes('HTTP 500')) {
+          errorMessage = '服务器内部错误，请稍后重试';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      // 如果是连接错误且重试次数小于2，自动重试
+      if ((error instanceof Error && error.message.includes('Failed to fetch')) && retryCount < 2) {
+        toast.loading(`连接失败，正在重试... (${retryCount + 1}/2)`);
+        setTimeout(() => {
+          analyzeFood(base64Image, retryCount + 1);
+        }, 2000);
+        return;
+      }
+
+      toast.error(errorMessage);
+    } finally {
       setIsRecognizing(false);
-      toast.success("识别完成！");
-    }, 1500);
+    }
+  };
+
+  const getCategory = (gi: number): "low" | "medium" | "high" => {
+    if (gi <= 55) return "low";
+    if (gi <= 69) return "medium";
+    return "high";
   };
 
   const handleReset = () => {
@@ -168,18 +223,18 @@ export const RecognizePage = () => {
                   <Card className="p-6 space-y-4 shadow-lg border-none bg-gradient-to-br from-card to-secondary/20">
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-foreground">
-                        {recognitionResult.name}
+                        {recognitionResult.food_name}
                       </h2>
                       <Badge
                         className={`text-sm px-3 py-1 ${
-                          recognitionResult.category === "low"
+                          getCategory(recognitionResult.gi_value) === "low"
                             ? "bg-success text-success-foreground shadow-success"
-                            : recognitionResult.category === "medium"
+                            : getCategory(recognitionResult.gi_value) === "medium"
                             ? "bg-warning text-warning-foreground shadow-warning"
                             : "bg-destructive text-destructive-foreground shadow-destructive"
                         }`}
                       >
-                        GI {recognitionResult.gi}
+                        GI {recognitionResult.gi_value}
                       </Badge>
                     </div>
 
@@ -189,31 +244,38 @@ export const RecognizePage = () => {
                           升糖指数
                         </span>
                         <div className="flex-1">
-                          <Progress 
-                            value={(recognitionResult.gi / 100) * 100} 
+                          <Progress
+                            value={(recognitionResult.gi_value / 100) * 100}
                             className={`h-3 ${
-                              recognitionResult.category === "low"
+                              getCategory(recognitionResult.gi_value) === "low"
                                 ? "[&>div]:bg-success"
-                                : recognitionResult.category === "medium"
+                                : getCategory(recognitionResult.gi_value) === "medium"
                                 ? "[&>div]:bg-warning"
                                 : "[&>div]:bg-destructive"
                             }`}
                           />
                         </div>
                         <span className="text-xl font-bold text-foreground w-12 text-right">
-                          {recognitionResult.gi}
+                          {recognitionResult.gi_value}
                         </span>
                       </div>
                     </div>
 
                     <div className="p-4 rounded-xl bg-gradient-to-r from-accent to-secondary border border-border/50">
                       <p className="text-sm text-accent-foreground leading-relaxed">
-                        💡 {recognitionResult.advice}
+                        💡 {recognitionResult.recommendation}
                       </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50">
+                      <span className="text-sm font-medium text-muted-foreground">是否适合糖尿病患者:</span>
+                      <Badge className={recognitionResult.suitable_for_diabetics ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
+                        {recognitionResult.suitable_for_diabetics ? "适合" : "不适合"}
+                      </Badge>
                     </div>
                   </Card>
 
-                  {recognitionResult.nutrition && (
+                  {recognitionResult.estimated_nutrition && (
                     <Card className="p-6 space-y-4 shadow-lg border-none">
                       <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                         <span className="text-2xl">🥗</span>
@@ -224,7 +286,7 @@ export const RecognizePage = () => {
                         <NutritionItem
                           icon={<Flame className="w-5 h-5" />}
                           label="热量"
-                          value={recognitionResult.nutrition.calories}
+                          value={recognitionResult.estimated_nutrition.calories}
                           unit="kcal"
                           color="text-orange-500"
                           bgColor="bg-orange-50"
@@ -232,7 +294,7 @@ export const RecognizePage = () => {
                         <NutritionItem
                           icon={<Wheat className="w-5 h-5" />}
                           label="碳水"
-                          value={recognitionResult.nutrition.carbs}
+                          value={recognitionResult.estimated_nutrition.carbs}
                           unit="g"
                           color="text-amber-500"
                           bgColor="bg-amber-50"
@@ -240,7 +302,7 @@ export const RecognizePage = () => {
                         <NutritionItem
                           icon={<Beef className="w-5 h-5" />}
                           label="蛋白质"
-                          value={recognitionResult.nutrition.protein}
+                          value={recognitionResult.estimated_nutrition.protein}
                           unit="g"
                           color="text-red-500"
                           bgColor="bg-red-50"
@@ -248,7 +310,7 @@ export const RecognizePage = () => {
                         <NutritionItem
                           icon={<Droplet className="w-5 h-5" />}
                           label="脂肪"
-                          value={recognitionResult.nutrition.fat}
+                          value={recognitionResult.estimated_nutrition.fat}
                           unit="g"
                           color="text-yellow-500"
                           bgColor="bg-yellow-50"
@@ -259,7 +321,7 @@ export const RecognizePage = () => {
                         <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
                           <span className="text-sm font-medium text-foreground">膳食纤维</span>
                           <span className="text-lg font-bold text-primary">
-                            {recognitionResult.nutrition.fiber}g
+                            {recognitionResult.estimated_nutrition.fiber}g
                           </span>
                         </div>
                       </div>
