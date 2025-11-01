@@ -5,10 +5,10 @@ const { URL } = require('url');
 
 const PORT = 3001;
 
-// 从.env.local读取API配置
+// 从.env读取API配置
 function loadConfig() {
   try {
-    const envContent = fs.readFileSync('.env.local', 'utf8');
+    const envContent = fs.readFileSync('.env', 'utf8');
     const config = {};
 
     envContent.split('\n').forEach(line => {
@@ -24,7 +24,7 @@ function loadConfig() {
     console.log('✅ API配置已加载');
     return config;
   } catch (error) {
-    console.error('❌ 无法读取.env.local文件:', error.message);
+    console.error('❌ 无法读取.env文件:', error.message);
     process.exit(1);
   }
 }

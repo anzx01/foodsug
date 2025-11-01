@@ -28,13 +28,37 @@
 
 ## 快速开始
 
-### 环境要求
+### 🚀 一键启动 (推荐)
+
+Windows用户可以直接运行启动脚本：
+
+```bash
+# 双击运行或在命令行执行
+start.bat
+```
+
+**启动脚本功能：**
+- ✅ 自动检查Node.js环境
+- ✅ 智能安装项目依赖
+- ✅ 交互式菜单选择启动模式
+- ✅ 一键停止所有服务
+
+**其他脚本：**
+```bash
+stop.bat    # 快速停止所有服务
+```
+
+**脚本使用说明：**
+1. **start.bat** - 主启动脚本，提供完整功能
+2. **stop.bat** - 快速停止脚本，用于紧急停止服务
+
+### 📋 环境要求
 
 - Node.js >= 16.0.0
 - npm >= 7.0.0
-- 通义千问 API Key (从阿里云DashScope获取)
+- 通义千问 API Key (仅真实AI模式需要)
 
-### 安装步骤
+### 🔧 手动安装步骤
 
 1. **克隆项目**
 ```bash
@@ -47,40 +71,30 @@ cd food-glucemic-guide-main
 npm install
 ```
 
-3. **配置环境变量**
+3. **配置API密钥 (可选)**
+创建 `.env` 文件并配置：
 ```bash
-# 复制环境变量模板
-cp .env.example .env.local
-
-# 编辑 .env.local 文件，填入你的API密钥
-DASHSCOPE_API_KEY=your-actual-api-key-here
+DASHSCOPE_API_KEY=your-api-key-here
+DASHSCOPE_BASEURL=https://dashscope.aliyuncs.com/compatible-mode/v1
 ```
 
-4. **启动后端服务**
+4. **选择启动模式**
 
-**选项1: 模拟服务器 (推荐用于测试)**
+**🧪 模拟服务器 (推荐用于测试)**
 ```bash
 npm run server:mock
 ```
+- ✅ 无需API密钥
+- ✅ 响应速度快
+- ✅ 返回预设食物数据
 
-**选项2: 真实AI服务器 (使用通义千问)**
+**🤖 真实AI服务器**
 ```bash
-# 确保.env.local文件中配置了API密钥
-# DASHSCOPE_API_KEY=your-api-key-here
-# DASHSCOPE_BASEURL=https://dashscope.aliyuncs.com/compatible-mode/v1
-
-# 启动真实AI服务器
 npm run server:ai
 ```
-
-**选项3: 传统Express服务器 (需要依赖)**
-```bash
-# 首先安装依赖
-npm install express cors openai
-
-# 启动服务器
-npm run server
-```
+- 🔑 需要配置通义千问API密钥
+- 📸 提供真实食物识别
+- 🥗 准确的营养分析
 
 5. **启动前端服务**
 ```bash
@@ -88,11 +102,16 @@ npm run dev
 ```
 
 6. **访问应用**
-- 前端: http://localhost:5173
-- 后端API: http://localhost:3001
-- 健康检查: http://localhost:3001/api/health
+- 🌐 前端: http://localhost:5173
+- 🔧 后端API: http://localhost:3001
+- ❤️ 健康检查: http://localhost:3001/api/health
 
-> **注意**: 模拟服务器返回随机数据用于测试，真实AI服务器需要通义千问API密钥
+### 📱 使用流程
+
+1. **启动服务** → 选择模拟或真实AI模式
+2. **打开前端** → 访问 http://localhost:5173
+3. **食物识别** → 拍照或上传食物图片
+4. **查看结果** → 获取GI值和营养建议
 
 ## API接口
 
@@ -198,60 +217,59 @@ npm run preview
 4. 创建API Key
 5. 将API Key配置到环境变量中
 
-## 故障排除
+## 🔧 故障排除
 
-### 常见问题
+### ❌ 常见问题
 
 1. **"Failed to fetch" 错误**
-   - **解决方法**: 启动模拟服务器 `npm run server:mock`
-   - **原因**: 后端服务器未启动或端口被占用
-   - **检查**: 访问 http://localhost:3001/api/health 测试服务器状态
+   - 🛠️ **解决方法**: 运行 `start.bat` 选择启动模拟服务器
+   - 🔍 **原因**: 后端服务器未启动或端口被占用
+   - ✅ **检查**: 访问 http://localhost:3001/api/health
 
-2. **API调用失败**
-   - 检查API密钥是否正确设置 (使用真实AI服务器时)
-   - 确认网络连接正常
-   - 查看后端日志获取详细错误信息
+2. **AI返回数据格式错误**
+   - 🖼️ **解决方法**: 确保图片尺寸大于10x10像素
+   - 🔑 **检查**: 真实AI模式需要配置API密钥
+   - 🧪 **建议**: 先使用模拟模式测试
 
-3. **图片识别不准确**
-   - 确保图片清晰度足够
-   - 避免光线过暗或过曝
-   - 食物应占据图片主要部分
-
-4. **跨域问题**
-   - 确认后端CORS配置正确
-   - 检查前端API请求地址
-
-5. **端口占用错误**
+3. **端口占用错误**
    ```bash
-   # 查找占用3001端口的进程
-   netstat -ano | findstr :3001   # Windows
-   lsof -i :3001                  # macOS/Linux
+   # Windows用户
+   start.bat  # 选择选项3停止所有服务
 
-   # 终止进程或使用其他端口
+   # 或手动停止
+   netstat -ano | findstr :3001
+   taskkill /f /pid [进程ID]
    ```
 
-6. **依赖安装问题**
-   ```bash
-   # 清理并重新安装依赖
-   rm -rf node_modules package-lock.json
-   npm install
-   npm install express cors openai  # 安装后端依赖
-   ```
+4. **API密钥问题**
+   - 📝 **配置文件**: 确保在`.env`文件中配置
+   - 🔗 **获取密钥**: [阿里云DashScope控制台](https://dashscope.console.aliyun.com/)
+   - ⚠️ **注意**: 不要将密钥提交到Git
 
-### 快速启动检查清单
+5. **图片识别失败**
+   - 📸 **图片要求**: 清晰、光线良好、食物占主要部分
+   - 📏 **尺寸限制**: 最小10x10像素，建议不超过10MB
+   - 🎨 **格式支持**: JPEG、PNG、WebP
 
-**测试模式:**
-- [ ] 启动模拟后端: `npm run server:mock`
-- [ ] 启动前端: `npm run dev`
-- [ ] 测试API: 访问 http://localhost:3001/api/health
-- [ ] 上传图片测试识别功能
+### 🚀 快速诊断清单
 
-**真实AI模式:**
-- [ ] 检查.env.local配置API密钥
-- [ ] 启动AI后端: `npm run server:ai`
-- [ ] 启动前端: `npm run dev`
-- [ ] 测试API: 访问 http://localhost:3001/api/health
-- [ ] 上传真实食物图片测试识别功能
+**🧪 测试模式:**
+- [ ] 运行 `start.bat` 选择选项1
+- [ ] 访问 http://localhost:5173
+- [ ] 测试API: http://localhost:3001/api/health
+- [ ] 上传图片验证功能
+
+**🤖 真实AI模式:**
+- [ ] 检查`.env`文件中API密钥配置
+- [ ] 运行 `start.bat` 选择选项2
+- [ ] 访问 http://localhost:5173
+- [ ] 上传真实食物图片测试
+
+### 📞 获取帮助
+
+- 🐛 **报告问题**: 在GitHub提交Issue
+- 📖 **查看文档**: 本README文件
+- 💬 **技术支持**: 联系开发团队
 
 ## 贡献指南
 

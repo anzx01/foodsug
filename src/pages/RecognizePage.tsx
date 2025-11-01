@@ -58,7 +58,15 @@ export const RecognizePage = () => {
 
       clearTimeout(timeoutId);
 
-      const result = await response.json();
+      let result;
+      try {
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON解析错误:', parseError);
+        throw new Error('AI返回的数据格式不正确，无法解析JSON');
+      }
 
       if (!response.ok) {
         throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);

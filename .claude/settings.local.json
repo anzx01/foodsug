@@ -20,7 +20,8 @@
       "Bash(npm run server:mock:*)",
       "Bash(set:*)",
       "Bash(cross-env PORT=3002 npm run server:mock:*)",
-      "Bash(cmd:*)"
+      "Bash(cmd:*)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []
