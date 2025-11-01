@@ -10,7 +10,17 @@
       "Bash(findstr:*)",
       "Bash(.start-ai-server.bat)",
       "Bash(pnpm add:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(tasklist:*)",
+      "Bash(wmic:*)",
+      "Bash(taskkill:*)",
+      "Bash(powershell \"Stop-Process -Id 552 -Force\")",
+      "Bash(npm run server:*)",
+      "Bash(powershell:*)",
+      "Bash(npm run server:mock:*)",
+      "Bash(set:*)",
+      "Bash(cross-env PORT=3002 npm run server:mock:*)",
+      "Bash(cmd:*)"
     ],
     "deny": [],
     "ask": []
