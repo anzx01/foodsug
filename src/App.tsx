@@ -1,3 +1,6 @@
+// Copyright (c) 2025. All rights reserved.
+// Licensed under the MIT License. See LICENSE file for details.
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
