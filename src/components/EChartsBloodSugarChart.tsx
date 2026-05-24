@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from "react";
+import * as echarts from "echarts";
 
 interface ChartData {
   date: string;
@@ -9,47 +10,19 @@ interface EChartsBloodSugarChartProps {
   data: ChartData[];
 }
 
+type TooltipParam = {
+  axisValueLabel?: string;
+  value?: number | string | null;
+};
+
+const isChartData = (item: ChartData | null): item is ChartData => item !== null;
+
 export const EChartsBloodSugarChart = ({ data }: EChartsBloodSugarChartProps) => {
   const chartRef = useRef<HTMLDivElement>(null);
-  const chartInstance = useRef<any>(null);
-  const [isEChartsLoaded, setIsEChartsLoaded] = useState(false);
-
-  // 动态加载ECharts
-  useEffect(() => {
-    const loadECharts = async () => {
-      // 如果已经加载了，直接返回
-      if ((window as any).echarts) {
-        setIsEChartsLoaded(true);
-        return;
-      }
-
-      try {
-        // 创建script标签
-        const script = document.createElement('script');
-        script.src = 'https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js';
-        script.async = true;
-
-        script.onload = () => {
-          setIsEChartsLoaded(true);
-        };
-
-        script.onerror = () => {
-          console.error('Failed to load ECharts script');
-        };
-
-        document.head.appendChild(script);
-      } catch (error) {
-        console.error('Error loading ECharts:', error);
-      }
-    };
-
-    loadECharts();
-  }, []);
+  const chartInstance = useRef<echarts.ECharts | null>(null);
 
   useEffect(() => {
-    if (!chartRef.current || !isEChartsLoaded) return;
-
-    const echarts = (window as any).echarts;
+    if (!chartRef.current) return;
 
     // 清除之前的实例
     if (chartInstance.current) {
@@ -72,7 +45,7 @@ export const EChartsBloodSugarChart = ({ data }: EChartsBloodSugarChartProps) =>
 
     // Group by date and take average
     const groupedData = data.reduce((acc, item) => {
-      const existing = acc.find((d: any) => d.date === item.date);
+      const existing = acc.find((d) => d.date === item.date);
       if (existing) {
         existing.value = (existing.value + item.value) / 2;
       } else {
@@ -102,7 +75,7 @@ export const EChartsBloodSugarChart = ({ data }: EChartsBloodSugarChartProps) =>
         date: item.date,
         value: isNaN(value) ? null : parseFloat(value.toFixed(1))
       };
-    }).filter(item => item !== null);
+    }).filter(isChartData);
 
     // 图表配置
     const option = {
@@ -115,9 +88,10 @@ export const EChartsBloodSugarChart = ({ data }: EChartsBloodSugarChartProps) =>
       },
       tooltip: {
         trigger: 'axis',
-        formatter: (params: any) => {
-          const data = params[0];
-          return `${data.axisValueLabel}<br/>血糖值: ${data.value} mmol/L`;
+        formatter: (params: unknown) => {
+          const points = Array.isArray(params) ? (params as TooltipParam[]) : [params as TooltipParam];
+          const point = points[0];
+          return `${point?.axisValueLabel ?? ""}<br/>血糖值: ${point?.value ?? "-"} mmol/L`;
         }
       },
       xAxis: {
@@ -178,7 +152,7 @@ export const EChartsBloodSugarChart = ({ data }: EChartsBloodSugarChartProps) =>
         chartInstance.current = null;
       }
     };
-  }, [data, isEChartsLoaded]);
+  }, [data]);
 
   return (
     <div
@@ -186,14 +160,8 @@ export const EChartsBloodSugarChart = ({ data }: EChartsBloodSugarChartProps) =>
       style={{
         width: '100%',
         height: '200px',
-        display: isEChartsLoaded ? 'block' : 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#6b7280',
-        fontSize: '14px'
+        display: 'block'
       }}
-    >
-      {!isEChartsLoaded && '正在加载图表...'}
-    </div>
+    />
   );
 };

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Camera, Image as ImageIcon, RefreshCw, Flame, Wheat, Beef, Droplet } from "lucide-react";
+import { Camera, Image as ImageIcon, RefreshCw, Flame, Wheat, Beef, Droplet, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { getGIAdvice } from "@/data/foodDatabase";
 import { toast } from "sonner";
+
+const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 
 export const RecognizePage = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -27,6 +28,18 @@ export const RecognizePage = () => {
   const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("请选择图片文件");
+        event.target.value = "";
+        return;
+      }
+
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        toast.error("图片不能超过10MB");
+        event.target.value = "";
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64Image = e.target?.result as string;
@@ -133,6 +146,15 @@ export const RecognizePage = () => {
             <h1 className="text-2xl font-bold mb-2">食物识别</h1>
             <p className="text-sm opacity-90">AI智能识别，守护您的健康</p>
           </div>
+
+          <Card className="p-4 mb-6 border-primary/20 bg-primary/5 shadow-none">
+            <div className="flex items-start gap-3">
+              <Info className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                识别结果、GI值和营养估算仅供健康管理参考，不构成医疗诊断或治疗建议；个体饮食方案请咨询医生或注册营养师。
+              </p>
+            </div>
+          </Card>
 
           {!selectedImage ? (
             <div className="space-y-4 animate-fade-in">

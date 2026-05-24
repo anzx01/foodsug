@@ -1,5 +1,4 @@
-// Copyright (c) 2025. All rights reserved.
-// Licensed under the MIT License. See LICENSE file for details.
+// SPDX-License-Identifier: MIT
 
 const http = require('http');
 const https = require('https');
@@ -7,6 +6,7 @@ const fs = require('fs');
 const { URL } = require('url');
 
 const PORT = 3001;
+const MAX_REQUEST_BYTES = 15 * 1024 * 1024;
 
 // 从.env读取API配置
 function loadConfig() {
@@ -162,12 +162,25 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'POST' && parsedUrl.pathname === '/api/analyze-food') {
     let body = '';
+    let requestTooLarge = false;
 
     req.on('data', chunk => {
+      if (requestTooLarge) return;
       body += chunk.toString();
+      if (Buffer.byteLength(body) > MAX_REQUEST_BYTES) {
+        requestTooLarge = true;
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: false,
+          error: '图片过大，请上传10MB以内的图片'
+        }));
+        req.destroy();
+      }
     });
 
     req.on('end', async () => {
+      if (requestTooLarge) return;
+
       try {
         const data = JSON.parse(body);
 

@@ -154,9 +154,9 @@ food-glucemic-guide-main/
 │   ├── pages/            # 页面组件
 │   ├── data/             # 数据文件
 │   └── hooks/            # 自定义Hook
-├── resource/             # 静态资源
-│   ├── images/           # 食物图片
-│   └── foods.json        # 食物数据库
+├── resource/             # 项目资料和示例数据
+│   └── foods.json        # 食物数据库示例
+├── docs/                 # 第三方API集成说明
 ├── server.js             # 后端服务器
 ├── .env.example          # 环境变量模板
 └── package.json          # 项目配置
@@ -190,6 +190,17 @@ food-glucemic-guide-main/
 - 支持常见图片格式 (JPEG, PNG, WebP)
 - 图片大小建议不超过10MB
 - Base64编码会增大约33%的体积
+
+### 医疗与隐私说明
+- 本项目提供的GI值、营养估算和AI识别结果仅供健康管理参考，不构成医疗诊断、治疗或处方建议。
+- 用户上传图片会发送到本地后端，并在真实AI模式下转发给配置的DashScope/Qwen接口处理。
+- 血糖记录默认保存在浏览器本地存储中；更多说明见 [PRIVACY.md](./PRIVACY.md)。
+
+### 开源合规说明
+- 项目代码采用 MIT 许可证，见 [LICENSE](./LICENSE)。
+- 第三方依赖以 `package.json` 和锁文件为准，发布前可运行 `pnpm licenses list --prod` 复核。
+- 仓库不再包含无法确认授权来源的食物图片，食物库界面使用文本/emoji 和原创SVG图标。
+- 第三方API文档仅保留项目集成说明，完整参数请查看供应商官方文档。
 
 ## 开发指南
 
